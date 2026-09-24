@@ -1,12 +1,7 @@
--- ai-study-rag complete schema for a NEW MySQL 8 database.
--- Docker Compose runs this file automatically only when mysql_data is empty.
--- Do not use this file to upgrade an existing database; use the incremental
--- scripts documented in sql/README.md instead.
-
 SET NAMES utf8mb4;
 SET time_zone = '+08:00';
 
-CREATE TABLE IF NOT EXISTS knowledge_base (
+CREATE TABLE knowledge_base (
     id BIGINT NOT NULL AUTO_INCREMENT,
     user_id BIGINT NOT NULL,
     name VARCHAR(255) NOT NULL,
@@ -16,7 +11,7 @@ CREATE TABLE IF NOT EXISTS knowledge_base (
     INDEX idx_knowledge_base_user_id (user_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
-CREATE TABLE IF NOT EXISTS document (
+CREATE TABLE document (
     id BIGINT NOT NULL AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
     file_url VARCHAR(1024) NULL COMMENT 'Legacy file location; use object_key for new records',
@@ -41,20 +36,20 @@ CREATE TABLE IF NOT EXISTS document (
     UNIQUE KEY uk_document_file_hash (knowledge_base_id, file_hash)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
-CREATE TABLE IF NOT EXISTS document_chunk (
+CREATE TABLE document_chunk (
     id BIGINT NOT NULL AUTO_INCREMENT,
     document_id BIGINT NOT NULL,
     content LONGTEXT NOT NULL,
     chunk_index INT NOT NULL,
     content_hash VARCHAR(64) NULL COMMENT 'Chunk content SHA-256 hash',
-    vector_id MEDIUMTEXT NULL COMMENT 'Serialized embedding vector used for reuse and in-memory retrieval',
+    vector_id VARCHAR(128) NULL,
     PRIMARY KEY (id),
     INDEX idx_document_chunk_document_id (document_id),
     INDEX idx_document_chunk_content_hash (content_hash),
     UNIQUE KEY uk_document_chunk_index (document_id, chunk_index)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
-CREATE TABLE IF NOT EXISTS chat_session (
+CREATE TABLE chat_session (
     id BIGINT NOT NULL AUTO_INCREMENT,
     user_id BIGINT NOT NULL,
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -62,7 +57,7 @@ CREATE TABLE IF NOT EXISTS chat_session (
     INDEX idx_chat_session_user_id (user_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
-CREATE TABLE IF NOT EXISTS chat_message (
+CREATE TABLE chat_message (
     id BIGINT NOT NULL AUTO_INCREMENT,
     session_id BIGINT NOT NULL,
     question TEXT NOT NULL,
@@ -73,7 +68,7 @@ CREATE TABLE IF NOT EXISTS chat_message (
     INDEX idx_chat_message_session_id (session_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
-CREATE TABLE IF NOT EXISTS eval_dataset (
+CREATE TABLE eval_dataset (
     id BIGINT NOT NULL AUTO_INCREMENT,
     name VARCHAR(128) NOT NULL,
     description VARCHAR(512) NULL,
@@ -83,7 +78,7 @@ CREATE TABLE IF NOT EXISTS eval_dataset (
     INDEX idx_eval_dataset_knowledge_base_id (knowledge_base_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
-CREATE TABLE IF NOT EXISTS eval_case (
+CREATE TABLE eval_case (
     id BIGINT NOT NULL AUTO_INCREMENT,
     dataset_id BIGINT NOT NULL,
     question TEXT NOT NULL,
@@ -99,7 +94,7 @@ CREATE TABLE IF NOT EXISTS eval_case (
     INDEX idx_eval_case_enabled (enabled)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
-CREATE TABLE IF NOT EXISTS eval_run (
+CREATE TABLE eval_run (
     id BIGINT NOT NULL AUTO_INCREMENT,
     dataset_id BIGINT NOT NULL,
     run_name VARCHAR(128) NULL,
@@ -122,7 +117,7 @@ CREATE TABLE IF NOT EXISTS eval_run (
     INDEX idx_eval_run_dataset_id (dataset_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
 
-CREATE TABLE IF NOT EXISTS eval_case_result (
+CREATE TABLE eval_case_result (
     id BIGINT NOT NULL AUTO_INCREMENT,
     run_id BIGINT NOT NULL,
     case_id BIGINT NOT NULL,

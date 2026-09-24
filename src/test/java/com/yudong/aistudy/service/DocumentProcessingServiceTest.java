@@ -1,10 +1,14 @@
 package com.yudong.aistudy.service;
 
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.yudong.aistudy.common.exception.BusinessException;
 import com.yudong.aistudy.mapper.DocumentMapper;
 import com.yudong.aistudy.model.DocumentStatus;
 import com.yudong.aistudy.model.entity.Document;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
@@ -22,6 +26,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class DocumentProcessingServiceTest {
+
+    @BeforeAll
+    static void initTableInfo() {
+        // Mockito mapper mocks do not initialize MyBatis-Plus entity metadata.
+        MapperBuilderAssistant assistant = new MapperBuilderAssistant(
+                new MybatisConfiguration(), "DocumentProcessingServiceTest");
+        assistant.setCurrentNamespace(DocumentMapper.class.getName());
+        TableInfoHelper.initTableInfo(assistant, Document.class);
+    }
 
     @Test
     void submittedTaskClaimsAndProcessesDocument() {

@@ -86,19 +86,13 @@ MYSQL_ROOT_PASSWORD=your_mysql_root_password
 
 ### 3. 启动基础服务
 
-仓库中的 Compose 文件会启动 MySQL：
+先启动 Docker Desktop。仓库中的 Compose 文件会启动 MySQL、Redis、Qdrant 和 MinIO，并为它们配置本地持久化数据卷：
 
 ```bash
 docker compose up -d
 ```
 
-还需启动 Redis、Qdrant 和 MinIO。下面是一组与默认配置一致的本地示例：
-
-```bash
-docker run -d --name ai-study-redis -p 6379:6379 redis:7-alpine
-docker run -d --name ai-study-qdrant -p 6333:6333 -p 6334:6334 -v ai-study-qdrant-data:/qdrant/storage qdrant/qdrant
-docker run -d --name ai-study-minio -p 9000:9000 -p 9001:9001 -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin -v ai-study-minio-data:/data minio/minio server /data --console-address ":9001"
-```
+服务端口仅绑定本机 `127.0.0.1`。可以运行 `docker compose ps` 查看状态；MySQL 首次初始化需要稍等片刻。
 
 默认服务地址：
 
@@ -110,15 +104,16 @@ docker run -d --name ai-study-minio -p 9000:9000 -p 9001:9001 -e MINIO_ROOT_USER
 | MinIO API | `http://localhost:9000` |
 | MinIO 控制台 | `http://localhost:9001` |
 
-应用会在首次使用时创建 MinIO Bucket 和 Qdrant Collection。
+应用会在首次上传时创建 MinIO Bucket。启动时也会检查 Qdrant Collection：不存在时按配置自动创建；
+已存在时校验向量维度和距离算法。配置不一致时应用会拒绝启动，不会自动删除已有向量。
 
 ### 4. 初始化数据库
 
-数据库名为 `ai_study_rag`。首次创建全新的 MySQL 数据卷时，Compose 会自动执行
-`sql/init_schema.sql`，创建项目所需的全部数据表，无需在 IDEA 中手动导入 SQL。
+数据库名为 `ai_study_rag`。启动应用时，Flyway 会自动执行
+`src/main/resources/db/migration` 中尚未运行的迁移，创建或升级数据表，无需在 IDEA 中手动导入 SQL。
 
-如果 MySQL 数据卷已经存在，Docker 不会重复执行初始化脚本，也不会覆盖已有数据。旧版本数据库
-请按照 `sql/README.md` 的说明备份并执行增量升级脚本。
+如果 MySQL 数据卷已经存在，Flyway 会通过 `flyway_schema_history` 判断需要执行的版本，
+不会重复运行已经成功的迁移。迁移规则见 `sql/README.md`。
 
 ### 5. 启动应用
 

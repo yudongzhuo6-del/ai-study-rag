@@ -16,4 +16,8 @@ public class VectorIndexProperties {
     private String collectionName = "document_chunks";
 
     private int dimension = 1024;
+
+    private boolean initializeOnStartup = true;
+
+    private String distance = "Cosine";
 }
